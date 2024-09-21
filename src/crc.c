@@ -20,73 +20,54 @@ unsigned int generateChecksum(char* text){
 	checksum = crc_16(text, len);
 	return checksum;
 }
-/*
-char* generate_combinations(char *current, int length, int position, const int target){
-	if (position == length) 
+char* testCombos(char* input, char* ascii, int inputlen, int curr, int max, int target){
+	int i;
+	size_t len;
+
+	len = strlen(ascii);
+	if (curr == max)
 		return NULL;
 
-	char letter[1];
-	for (int i = 0; i < CHAR_COUNT; i++){
-		letter[0]  = (char)(MIN_ASCII + i);
-			strcat(current, letter);
-
-		if (target == generateChecksum(current))
-			printf("\n%s\n", current);
-			return current; 
-
-			generate_combinations(current, length, position + 1, target);
-	}
-}*/
-
-char* testCombinations(char* baseString, int targetChecksum, int len){
-	char combination[len + 1];
-	char* ret;
-	combination[len] = '\0'; // Null-terminate the combination string
-	char testString[len + strlen(baseString) + 1]; // String to hold base + combination
-
-	for (long long i = 0; i < (long long)pow(94, len); i++){
-	    long long num = i;
-	    for (int j = 0; j < len; j++){
-	        combination[len - 1 - j] = (num % 94) + 32;
-	        num /= 94;
-	    }
-
-	    snprintf(testString, sizeof(testString), "%s%s", baseString, combination);
-
-	    int checksum = generateChecksum(testString);
-
-	    if (checksum == targetChecksum){
-		ret = malloc(sizeof(combination));	
-		ret = combination;
-	        return ret; // Exit after finding the first match
-	    }
+	for (i = 0; i < len; i++){
+		input[inputlen + curr] = ascii[i];	
+		
+		if (generateChecksum(input) == target){
+			return input;
+		}
+		testCombos(input, ascii, inputlen, curr+1, max, target);
 	}
 }
 
 void* crackSum(void* arguments){
 	args* passed;	
-	char* text, ascii[1], *tmp;
+	char* text, ascii[1], *tmp, *new;
 	unsigned int target, len;
-	int iterator, letter, i, j;
+	int iterator, letter, i, j, inputlen;
 
-	 passed = (args*) arguments;
+	passed = (args*) arguments;
+	
+	text = (char*) malloc(sizeof(passed->fileText));
+	strcpy(text, passed->fileText);
 
-	text = passed->fileText;
 	target = passed->target;
 	len = passed->thread;
 
+	tmp = malloc(strlen(text) + len + 1);
+
+	inputlen = strlen(text);
 
 	iterator = 1;
 	
-	while(!flag){
+	while(flag == false){
 		if (generateChecksum(text) == target)
 			break;
-		tmp = testCombinations(text, target, len);
-		pthread_mutex_lock(&lock);	
+		tmp = realloc(text, strlen(text) + 1 + sizeof(char) * len);
+		new = testCombos(tmp, printable, inputlen, 0, len, target);
 		
+		pthread_mutex_lock(&lock);	
+		printf("thread %d found it!", len);		
 		flag = true;
-		strcat(text, tmp);	
-		passed->fileText = text;
+		passed->fileText = tmp;
 		pthread_mutex_unlock(&lock);
 
 	}	
@@ -105,14 +86,14 @@ char* matchSums(char* inputText, unsigned int target){
 	args* array[10];	
 	pthread_mutex_init(&lock, NULL);	
 	
-	textToAdd = "wahoo";
+	textToAdd = "w";
 	strcat(inputText, textToAdd);
 	
 	for (i = 0; i < 10; i++){
 		array[i] = malloc(sizeof(args));
 		array[i]->fileText = inputText;
 		array[i]->target = target;
-		array[i]->thread = array[i]->thread + i + 1;
+		array[i]->thread = i+1;
 		
 		pthread_create(&thread[i], NULL, &crackSum, array[i]);	
 	}
