@@ -7,7 +7,8 @@
 #include "../utils/crc.h"
 #include "../libcrc/include/checksum.h"
 
-char* printable =" \"!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"; 
+char* printable ="\"!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"; 
+
 volatile bool flag = false;
 pthread_mutex_t lock;
 
@@ -20,21 +21,22 @@ unsigned int generateChecksum(char* text){
 	checksum = crc_16(text, len);
 	return checksum;
 }
-char* testCombos(char* input, char* ascii, int inputlen, int curr, int max, int target){
+void testCombos(char* input, char* ascii, int inputlen, int curr, int max, int target, args* passed){
 	int i;
-	size_t len;
 
-	len = strlen(ascii);
-	if (curr == max)
-		return NULL;
+	if (curr == max){
+		passed->result = NULL;
+		return;
+	}
 
-	for (i = 0; i < len; i++){
+	for (i = 0; i < 96; i++){
 		input[inputlen + curr] = ascii[i];	
 		
 		if (generateChecksum(input) == target){
-			return input;
+			passed->result = true;
+			return;
 		}
-		testCombos(input, ascii, inputlen, curr+1, max, target);
+		testCombos(input, ascii, inputlen, curr+1, max, target, passed);
 	}
 }
 
@@ -46,30 +48,40 @@ void* crackSum(void* arguments){
 
 	passed = (args*) arguments;
 	
-	text = (char*) malloc(sizeof(passed->fileText));
-	strcpy(text, passed->fileText);
-
+	
 	target = passed->target;
 	len = passed->thread;
-
-	tmp = malloc(strlen(text) + len + 1);
+	
+	text = (char*) malloc(strlen(passed->fileText)+len+1);
+	strcpy(text, passed->fileText);
 
 	inputlen = strlen(text);
 
 	iterator = 1;
+
+	passed->result = NULL;
 	
 	while(flag == false){
 		if (generateChecksum(text) == target)
 			break;
-		tmp = realloc(text, strlen(text) + 1 + sizeof(char) * len);
-		new = testCombos(tmp, printable, inputlen, 0, len, target);
 		
-		pthread_mutex_lock(&lock);	
-		printf("thread %d found it!", len);		
-		flag = true;
-		passed->fileText = tmp;
-		pthread_mutex_unlock(&lock);
-
+		testCombos(text, printable, inputlen, 0, len, target, passed);
+		
+		if (passed->result != NULL){	
+			pthread_mutex_lock(&lock);	
+			
+			printf("\nthread %d found it!\n", len);		
+			flag = true;
+			printf("%s\n", text);
+			passed->result = text;
+				
+			pthread_mutex_unlock(&lock);
+		}
+		if (passed->result == NULL){
+			printf("\nthread %d couldnt find it!\n", len);
+			free(passed);
+			return NULL;
+		}
 	}	
 	return NULL;
 }
