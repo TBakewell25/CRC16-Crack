@@ -17,13 +17,11 @@ int main(int argc, char** argv){
 	text = readFile(inputFile);
 	checksum = generateChecksum(text);
 	hex = intToHex(checksum);
-	printf("%s\n", hex);
 	
 	if (argc == 3){
 		targetSum = hexToInt(argv[2]);
 	
-		hacked = matchSums(text, targetSum);
-		writeFile(inputFile, hacked);
+		matchSums(text, targetSum);
 	}
 	
 	return 0;

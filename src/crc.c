@@ -6,7 +6,7 @@
 #include <pthread.h>
 #include "../utils/crc.h"
 #include "../libcrc/include/checksum.h"
-
+#include "../utils/IO.h"
 char* printable ="\"!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"; 
 
 volatile bool flag = false;
@@ -31,12 +31,15 @@ void testCombos(char* input, char* ascii, int inputlen, int curr, int max, int t
 
 	for (i = 0; i < 96; i++){
 		input[inputlen + curr] = ascii[i];	
-		
 		if (generateChecksum(input) == target){
 			passed->result = true;
 			return;
 		}
 		testCombos(input, ascii, inputlen, curr+1, max, target, passed);
+		
+		if (passed->result == true) {
+            		return;  // Propagate the success back up	
+		}
 	}
 }
 
@@ -48,7 +51,6 @@ void* crackSum(void* arguments){
 
 	passed = (args*) arguments;
 	
-	
 	target = passed->target;
 	len = passed->thread;
 	
@@ -59,8 +61,8 @@ void* crackSum(void* arguments){
 
 	iterator = 1;
 
-	passed->result = NULL;
 	
+	passed->result = NULL;
 	while(flag == false){
 		if (generateChecksum(text) == target)
 			break;
@@ -69,16 +71,12 @@ void* crackSum(void* arguments){
 		
 		if (passed->result != NULL){	
 			pthread_mutex_lock(&lock);	
-			
-			printf("\nthread %d found it!\n", len);		
 			flag = true;
-			printf("%s\n", text);
-			passed->result = text;
-				
+			writeFile("Output.txt", text);	
+			free(passed);			
 			pthread_mutex_unlock(&lock);
 		}
 		if (passed->result == NULL){
-			printf("\nthread %d couldnt find it!\n", len);
 			free(passed);
 			return NULL;
 		}
@@ -89,7 +87,7 @@ void* crackSum(void* arguments){
 	
 		
 
-char* matchSums(char* inputText, unsigned int target){
+void matchSums(char* inputText, unsigned int target){
 	char* textToAdd;
 	args *arguments;
 	int i, j;
@@ -127,6 +125,6 @@ char* matchSums(char* inputText, unsigned int target){
 
 	pthread_mutex_destroy(&lock);
 	
-	return inputText;
+	return;
 }
 
