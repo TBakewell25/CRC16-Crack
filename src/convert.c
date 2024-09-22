@@ -4,18 +4,10 @@
 #include <stdio.h>
 
 int hexToInt(char* hex){
-	int len, i, position, tmp, ret;
+	int result;
 
-	len = strlen(hex);
-	ret = 0;
-
-	for (i = 0; i < len; i++){
-		position = i+=1;
-		tmp = (int) hex[i];
-		
-		ret += tmp<<(len-i-1);
-	}
-	return ret;
+	result = strtol(hex, NULL, 16);
+	return result;
 }	
 
 char* intToHex(int num){

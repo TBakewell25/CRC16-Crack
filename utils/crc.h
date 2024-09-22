@@ -15,7 +15,7 @@ unsigned int generateChecksum(char* text);
 
 void* crackSum(void* args);
 
-char* matchSums(char* inputText, unsigned int target);
+void matchSums(char* inputText, unsigned int target);
 
 
 #endif

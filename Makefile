@@ -1,36 +1,34 @@
+# Directories
+SRC_DIR = ./src/
+BIN_DIR = ./bins/
+INC_DIR = ./utils/
+
 # Compiler and flags
 CC = gcc
-CFLAGS = -Wall -g -I./utils -I./libcrc/include
-LDFLAGS = -L./libcrc/src -lcrc -lm
+CFLAGS = -Wall -g -I./utils/ -I./libcrc/include/
+LDFLAGS = -L./libcrc/src/ -lcrc -lm -lssl -lcrypto
 
-# Directories
-SRC_DIR = ./src
-OBJ_DIR = ./obj
-BIN_DIR = ./bins
-LIBCRC_DIR = ./libcrc
+# Source files
+SRC = $(wildcard $(SRC_DIR)/*.c)  # Automatically find all .c files
+OBJ = $(patsubst $(SRC_DIR)%.c,$(BIN_DIR)%.o,$(SRC))
 
-# Source and object files
-SOURCES = $(wildcard $(SRC_DIR)/*.c)
-OBJECTS = $(patsubst $(SRC_DIR)/%.c, $(OBJ_DIR)/%.o, $(SOURCES))
+# Binaries
+BINS = $(BIN_DIR)/crc16 $(BIN_DIR)/dictionary
 
-# Output binary
-TARGET = $(BIN_DIR)/hashing
+# Targets
+all: $(BINS)
 
-# Rule to create the binary
-$(TARGET): $(OBJECTS)
-	@mkdir -p $(BIN_DIR)
-	$(CC) -o $@ $(OBJECTS) $(LDFLAGS)
+$(BIN_DIR)/crc16: $(BIN_DIR)/hash.o $(OBJ)
+	$(CC) -o $@ $^ $(LDFLAGS)
 
-# Compile source files into object files
-$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
-	@mkdir -p $(OBJ_DIR)
-	$(CC) $(CFLAGS) -c $< -o $@
+$(BIN_DIR)/dictionary: $(BIN_DIR)/dictionary.o $(OBJ)
+	$(CC) -o $@ $^ $(LDFLAGS)
 
-# Build target
-.PHONY: all
-all: $(TARGET)
+$(BIN_DIR)/%.o: $(SRC_DIR)/%.c
+	$(CC) -c $(CFLAGS) $< -o $@
 
-# Clean up
-.PHONY: clean
+# Clean target
 clean:
-	rm -rf $(OBJ_DIR)/*.o $(TARGET)
+	rm -f $(BIN_DIR)/*.o $(BINS)
+
+.PHONY: all clean
