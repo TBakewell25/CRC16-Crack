@@ -45,9 +45,9 @@ void testCombos(char* input, char* ascii, int inputlen, int curr, int max, int t
 
 void* crackSum(void* arguments){
 	args* passed;	
-	char* text, ascii[1], *tmp, *new;
+	char* text;
 	unsigned int target, len;
-	int iterator, letter, i, j, inputlen;
+	int inputlen;
 
 	passed = (args*) arguments;
 	
@@ -59,10 +59,8 @@ void* crackSum(void* arguments){
 
 	inputlen = strlen(text);
 
-	iterator = 1;
-
-	
 	passed->result = NULL;
+
 	while(flag == false){
 		if (generateChecksum(text) == target)
 			break;
@@ -89,14 +87,13 @@ void* crackSum(void* arguments){
 
 void matchSums(char* inputText, unsigned int target){
 	char* textToAdd;
-	args *arguments;
-	int i, j;
+	int i;
 	pthread_t thread[10];
-
 	args* array[10];	
+	
 	pthread_mutex_init(&lock, NULL);	
 	
-	textToAdd = "w";
+	textToAdd = "wahoowa";
 	strcat(inputText, textToAdd);
 	
 	for (i = 0; i < 10; i++){
@@ -106,22 +103,9 @@ void matchSums(char* inputText, unsigned int target){
 		array[i]->thread = i+1;
 		
 		pthread_create(&thread[i], NULL, &crackSum, array[i]);	
+		pthread_join(thread[i], NULL);
+
 	}
-
-//	for (j = 0; j < 10; j++){
-//		pthread_join(thread[i], NULL);
-//	}
-
-	pthread_join(thread[0], NULL);
-	pthread_join(thread[1], NULL);
-	pthread_join(thread[2], NULL);
-	pthread_join(thread[3], NULL);
-	pthread_join(thread[4], NULL);
-	pthread_join(thread[5], NULL);
-	pthread_join(thread[6], NULL);
-	pthread_join(thread[7], NULL);
-	pthread_join(thread[8], NULL);
-	pthread_join(thread[9], NULL);
 
 	pthread_mutex_destroy(&lock);
 	
